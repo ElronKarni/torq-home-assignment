@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"ip2country-api/pkg/ip2country"
+	"ip2country-api/internal/ip2country"
 )
 
 // MockService is a mock implementation of the ip2country.Service interface

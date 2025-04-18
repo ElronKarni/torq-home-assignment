@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"ip2country-api/pkg/ip2country"
+	"ip2country-api/internal/ip2country"
 )
 
 // MockRateLimiter is a mock implementation for the middleware.RateLimiter interface

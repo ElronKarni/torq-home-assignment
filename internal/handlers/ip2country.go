@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"ip2country-api/pkg/ip2country"
+	"ip2country-api/internal/ip2country"
 )
 
 // FindCountryHandler creates an HTTP handler function for the find-country endpoint

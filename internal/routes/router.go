@@ -3,9 +3,9 @@ package routes
 import (
 	"net/http"
 
-	"ip2country-api/pkg/handlers"
-	"ip2country-api/pkg/ip2country"
-	"ip2country-api/pkg/middleware"
+	"ip2country-api/internal/handlers"
+	"ip2country-api/internal/ip2country"
+	"ip2country-api/internal/middleware"
 )
 
 // RegisterRoutes sets up all API routes

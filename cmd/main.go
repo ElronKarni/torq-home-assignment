@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"ip2country-api/pkg/config"
-	"ip2country-api/pkg/ip2country"
+	"ip2country-api/internal/config"
+	"ip2country-api/internal/ip2country"
+	"ip2country-api/internal/routes"
 	"ip2country-api/pkg/ratelimit"
-	"ip2country-api/pkg/routes"
 )
 
 // For testing purposes - allows tests to override server start behavior

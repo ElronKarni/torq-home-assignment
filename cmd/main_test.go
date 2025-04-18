@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"ip2country-api/pkg/handlers"
-	"ip2country-api/pkg/ip2country"
-	"ip2country-api/pkg/middleware"
+	"ip2country-api/internal/handlers"
+	"ip2country-api/internal/ip2country"
+	"ip2country-api/internal/middleware"
 	"ip2country-api/pkg/ratelimit"
 )
 
