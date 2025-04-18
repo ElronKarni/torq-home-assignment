@@ -34,14 +34,14 @@ func setupServer() (*http.Server, error) {
 	// Initialize rate limiter
 	limiter := ratelimit.NewLimiter(cfg.RateLimit)
 
-	// Set up HTTP routes
-	handlers.RegisterRoutes(ipService, limiter)
+	// Set up HTTP routes with middleware
+	handler := handlers.RegisterRoutes(ipService, limiter)
 
 	// Create HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	server := &http.Server{
 		Addr:    addr,
-		Handler: nil, // Use DefaultServeMux
+		Handler: handler, // Use our custom handler with middleware
 	}
 
 	log.Printf("Server configured on %s", addr)

@@ -8,22 +8,9 @@ import (
 	"ip2country-api/pkg/ip2country"
 )
 
-// RateLimiter defines the interface for rate limiting
-type RateLimiter interface {
-	Allow() error
-}
-
 // FindCountryHandler creates an HTTP handler function for the find-country endpoint
-func FindCountryHandler(ipService ip2country.Service, limiter RateLimiter) http.HandlerFunc {
+func FindCountryHandler(ipService ip2country.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Apply rate limiting
-		if err := limiter.Allow(); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusTooManyRequests)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Too many requests"})
-			return
-		}
-
 		// Extract IP from query parameter
 		ip := r.URL.Query().Get("ip")
 		if ip == "" {
