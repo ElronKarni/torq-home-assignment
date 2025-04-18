@@ -11,17 +11,24 @@ import (
 	"ip2country-api/pkg/ratelimit"
 )
 
-func main() {
+// For testing purposes - allows tests to override server start behavior
+var serverListenAndServe = func(server *http.Server) error {
+	return server.ListenAndServe()
+}
+
+// setupServer initializes all components and returns the HTTP server
+// This function is extracted to make it testable
+func setupServer() (*http.Server, error) {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		return nil, fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Initialize IP2Country service using the factory function
 	ipService, err := ip2country.NewService(cfg.DataPath, cfg.IP2CountryDBType)
 	if err != nil {
-		log.Fatalf("Failed to initialize IP2Country service: %v", err)
+		return nil, fmt.Errorf("failed to initialize IP2Country service: %v", err)
 	}
 
 	// Initialize rate limiter
@@ -30,14 +37,29 @@ func main() {
 	// Set up HTTP routes
 	handlers.RegisterRoutes(ipService, limiter)
 
-	// Start HTTP server
+	// Create HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("Starting server on %s", addr)
+	server := &http.Server{
+		Addr:    addr,
+		Handler: nil, // Use DefaultServeMux
+	}
+
+	log.Printf("Server configured on %s", addr)
 	log.Printf("Rate limit: %d requests per second", cfg.RateLimit)
 	log.Printf("IP2Country data path: %s", cfg.DataPath)
 	log.Printf("IP2Country database type: %s", cfg.IP2CountryDBType)
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	return server, nil
+}
+
+func main() {
+	server, err := setupServer()
+	if err != nil {
+		log.Fatalf("Server setup failed: %v", err)
+	}
+
+	log.Printf("Starting server on %s", server.Addr)
+	if err := serverListenAndServe(server); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

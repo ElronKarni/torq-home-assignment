@@ -2,8 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds the application configuration
@@ -16,6 +19,11 @@ type Config struct {
 
 // Load reads configuration from environment variables
 func Load() (*Config, error) {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: No .env file found or error loading it:", err)
+	}
+
 	config := &Config{}
 
 	// Read IP2COUNTRY_DATA_PATH
@@ -34,6 +42,7 @@ func Load() (*Config, error) {
 
 	// Read RATE_LIMIT
 	rateLimitStr := os.Getenv("RATE_LIMIT")
+	log.Println("rateLimitStr", rateLimitStr)
 	if rateLimitStr == "" {
 		config.RateLimit = 100 // Default value
 	} else {

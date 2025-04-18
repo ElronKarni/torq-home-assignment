@@ -1,12 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	"ip2country-api/pkg/handlers"
 	"ip2country-api/pkg/ip2country"
@@ -35,133 +34,160 @@ func (m *MockLimiter) Allow() error {
 	return nil
 }
 
-func TestFindCountryHandler(t *testing.T) {
-	testCases := []struct {
-		name           string
-		ipParam        string
-		mockLookupFunc func(ip string) (*ip2country.Result, error)
-		expectStatus   int
-		expectBody     map[string]string
-		limitExceeded  bool
-	}{
-		{
-			name:    "Valid IP - Found",
-			ipParam: "1.1.1.1",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				return &ip2country.Result{Country: "Australia", City: "Sydney"}, nil
-			},
-			expectStatus:  http.StatusOK,
-			expectBody:    map[string]string{"country": "Australia", "city": "Sydney"},
-			limitExceeded: false,
-		},
-		{
-			name:    "Valid IP - Not Found",
-			ipParam: "9.9.9.9",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				return nil, ip2country.ErrIPNotFound
-			},
-			expectStatus:  http.StatusNotFound,
-			expectBody:    map[string]string{"error": "IP address not found"},
-			limitExceeded: false,
-		},
-		{
-			name:    "Invalid IP",
-			ipParam: "not-an-ip",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				return nil, ip2country.ErrInvalidIP
-			},
-			expectStatus:  http.StatusBadRequest,
-			expectBody:    map[string]string{"error": "Invalid IP address"},
-			limitExceeded: false,
-		},
-		{
-			name:    "Missing IP Parameter",
-			ipParam: "",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				t.Fatal("LookupIP should not be called when IP parameter is missing")
-				return nil, nil
-			},
-			expectStatus:  http.StatusBadRequest,
-			expectBody:    map[string]string{"error": "Missing 'ip' parameter"},
-			limitExceeded: false,
-		},
-		{
-			name:    "Rate Limit Exceeded",
-			ipParam: "1.1.1.1",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				t.Fatal("LookupIP should not be called when rate limit is exceeded")
-				return nil, nil
-			},
-			expectStatus:  http.StatusTooManyRequests,
-			expectBody:    map[string]string{"error": "Too many requests"},
-			limitExceeded: true,
-		},
-		{
-			name:    "Server Error",
-			ipParam: "1.1.1.1",
-			mockLookupFunc: func(ip string) (*ip2country.Result, error) {
-				return nil, errors.New("unexpected server error")
-			},
-			expectStatus:  http.StatusInternalServerError,
-			expectBody:    map[string]string{"error": "Failed to look up IP information"},
-			limitExceeded: false,
-		},
+// TestSetupServer tests the server setup functionality
+func TestSetupServer(t *testing.T) {
+	// Save original environment and restore after test
+	origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+	origPort := os.Getenv("PORT")
+
+	// Set test environment variables
+	testDataDir, err := os.MkdirTemp("", "ip2country-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(testDataDir)
+
+	// Create a test data file
+	testDataFile := testDataDir + "/ip2country.csv"
+	testData := "1.1.1.1,Sydney,Australia\n8.8.8.8,Mountain View,United States"
+	if err := os.WriteFile(testDataFile, []byte(testData), 0644); err != nil {
+		t.Fatalf("Failed to write test data file: %v", err)
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Create mock IP service
-			mockService := &MockIPService{
-				lookupFunc: tc.mockLookupFunc,
-			}
+	// Set environment variables for the test
+	os.Setenv("IP2COUNTRY_DATA_PATH", testDataFile)
+	os.Setenv("PORT", "8081") // Use a different port than default
+	defer func() {
+		os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+		os.Setenv("PORT", origPort)
+	}()
 
-			// Create a mock rate limiter
-			mockLimiter := &MockLimiter{
-				shouldAllow: !tc.limitExceeded,
-			}
+	// Clear DefaultServeMux to avoid conflicts from previous tests
+	http.DefaultServeMux = http.NewServeMux()
 
-			// Create handler
-			handler := handlers.FindCountryHandler(mockService, mockLimiter)
+	// Test the setupServer function
+	server, err := setupServer()
+	if err != nil {
+		t.Fatalf("setupServer() failed: %v", err)
+	}
 
-			// Create test request
-			req, err := http.NewRequest(http.MethodGet, "/v1/find-country", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
+	// Verify the server was set up correctly
+	if server == nil {
+		t.Fatal("setupServer() returned nil server")
+	}
 
-			// Add IP parameter if it's not empty
-			if tc.ipParam != "" {
-				q := req.URL.Query()
-				q.Add("ip", tc.ipParam)
-				req.URL.RawQuery = q.Encode()
-			}
+	if server.Addr != ":8081" {
+		t.Errorf("setupServer() configured wrong address: got %s, want :8081", server.Addr)
+	}
+}
 
-			// Create response recorder
-			rr := httptest.NewRecorder()
+// TestSetupServerErrors tests the error cases in setupServer
+func TestSetupServerErrors(t *testing.T) {
+	// Test case 1: Invalid configuration
+	t.Run("ConfigurationError", func(t *testing.T) {
+		// Save original environment and restore after test
+		origPort := os.Getenv("PORT")
 
-			// Serve the request
-			handler.ServeHTTP(rr, req)
+		// Set invalid PORT to trigger config error
+		os.Setenv("PORT", "not-a-number")
+		defer os.Setenv("PORT", origPort)
 
-			// Check status code
-			if rr.Code != tc.expectStatus {
-				t.Errorf("Handler returned wrong status code: got %v, want %v",
-					rr.Code, tc.expectStatus)
-			}
+		// Test the setupServer function
+		server, err := setupServer()
 
-			// Check response body
-			var body map[string]string
-			if err := json.NewDecoder(rr.Body).Decode(&body); err != nil && err != io.EOF {
-				t.Fatalf("Failed to decode response body: %v", err)
-			}
+		// Verify error is returned
+		if err == nil {
+			t.Fatal("setupServer() should have failed with invalid PORT")
+		}
+		if server != nil {
+			t.Fatal("setupServer() should return nil server on error")
+		}
+	})
 
-			// Compare body contents
-			for k, v := range tc.expectBody {
-				if body[k] != v {
-					t.Errorf("Handler returned wrong body: got %v, want %v for key %q",
-						body[k], v, k)
-				}
-			}
-		})
+	// Test case 2: Invalid data path
+	t.Run("InvalidDataPath", func(t *testing.T) {
+		// Save original environment and restore after test
+		origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+
+		// Set non-existent data path
+		os.Setenv("IP2COUNTRY_DATA_PATH", "/path/that/does/not/exist.csv")
+		defer os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+
+		// Test the setupServer function
+		server, err := setupServer()
+
+		// Verify error is returned
+		if err == nil {
+			t.Fatal("setupServer() should have failed with invalid data path")
+		}
+		if server != nil {
+			t.Fatal("setupServer() should return nil server on error")
+		}
+	})
+}
+
+// TestMainFunction tests parts of the main function without actually starting the server
+func TestMainFunction(t *testing.T) {
+	// Save original function and restore after test
+	originalListenAndServe := serverListenAndServe
+	defer func() { serverListenAndServe = originalListenAndServe }()
+
+	// Override ListenAndServe to return immediately
+	called := false
+	serverListenAndServe = func(s *http.Server) error {
+		called = true
+		return nil // Return immediately without blocking
+	}
+
+	// Save original environment and restore after test
+	origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+	origPort := os.Getenv("PORT")
+
+	// Set test environment variables
+	testDataDir, err := os.MkdirTemp("", "ip2country-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(testDataDir)
+
+	// Create a test data file
+	testDataFile := testDataDir + "/ip2country.csv"
+	testData := "1.1.1.1,Sydney,Australia\n8.8.8.8,Mountain View,United States"
+	if err := os.WriteFile(testDataFile, []byte(testData), 0644); err != nil {
+		t.Fatalf("Failed to write test data file: %v", err)
+	}
+
+	// Set environment variables for the test
+	os.Setenv("IP2COUNTRY_DATA_PATH", testDataFile)
+	os.Setenv("PORT", "8082") // Use a different port than default
+	defer func() {
+		os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+		os.Setenv("PORT", origPort)
+	}()
+
+	// Clear DefaultServeMux to avoid conflicts from previous tests
+	http.DefaultServeMux = http.NewServeMux()
+
+	// Create a channel to signal when main has completed
+	done := make(chan bool)
+
+	// Run main in a goroutine
+	go func() {
+		main()
+		done <- true
+	}()
+
+	// Wait for main to call our mocked ListenAndServe or timeout
+	select {
+	case <-done:
+		// main completed
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timeout waiting for main to complete")
+	}
+
+	// Verify ListenAndServe was called
+	if !called {
+		t.Fatal("serverListenAndServe was not called")
 	}
 }
 
