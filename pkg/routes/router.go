@@ -1,8 +1,9 @@
-package handlers
+package routes
 
 import (
 	"net/http"
 
+	"ip2country-api/pkg/handlers"
 	"ip2country-api/pkg/ip2country"
 	"ip2country-api/pkg/middleware"
 )
@@ -16,7 +17,7 @@ func RegisterRoutes(
 	mux := http.NewServeMux()
 
 	// IP-to-country API endpoints
-	mux.HandleFunc("/v1/find-country", FindCountryHandler(ipService))
+	mux.HandleFunc("/v1/find-country", handlers.FindCountryHandler(ipService))
 
 	// Additional routes can be added here as the API grows
 

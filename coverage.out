@@ -1,7 +1,2 @@
 mode: set
-ip2country-api/pkg/ratelimit/ratelimit.go:20.49,25.2 1 1
-ip2country-api/pkg/ratelimit/ratelimit.go:28.33,36.38 4 1
-ip2country-api/pkg/ratelimit/ratelimit.go:36.38,39.3 2 1
-ip2country-api/pkg/ratelimit/ratelimit.go:42.2,42.36 1 1
-ip2country-api/pkg/ratelimit/ratelimit.go:42.36,44.3 1 1
-ip2country-api/pkg/ratelimit/ratelimit.go:47.2,48.12 2 1
+ip2country-api/pkg/routes/router.go:15.16,32.2 5 1

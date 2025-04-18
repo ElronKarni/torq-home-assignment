@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"ip2country-api/pkg/config"
-	"ip2country-api/pkg/handlers"
 	"ip2country-api/pkg/ip2country"
 	"ip2country-api/pkg/ratelimit"
+	"ip2country-api/pkg/routes"
 )
 
 // For testing purposes - allows tests to override server start behavior
@@ -35,7 +35,7 @@ func setupServer() (*http.Server, error) {
 	limiter := ratelimit.NewLimiter(cfg.RateLimit)
 
 	// Set up HTTP routes with middleware
-	handler := handlers.RegisterRoutes(ipService, limiter)
+	handler := routes.RegisterRoutes(ipService, limiter)
 
 	// Create HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)

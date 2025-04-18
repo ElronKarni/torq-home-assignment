@@ -1,4 +1,4 @@
-package handlers
+package routes
 
 import (
 	"net/http"
@@ -15,6 +15,15 @@ type MockRateLimiter struct {
 
 func (m *MockRateLimiter) Allow() error {
 	return m.AllowFunc()
+}
+
+// MockService is a mock implementation of the ip2country.Service interface
+type MockService struct {
+	LookupIPFunc func(ip string) (*ip2country.Result, error)
+}
+
+func (m *MockService) LookupIP(ip string) (*ip2country.Result, error) {
+	return m.LookupIPFunc(ip)
 }
 
 func TestRegisterRoutes(t *testing.T) {
