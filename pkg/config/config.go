@@ -42,7 +42,6 @@ func Load() (*Config, error) {
 
 	// Read RATE_LIMIT
 	rateLimitStr := os.Getenv("RATE_LIMIT")
-	log.Println("rateLimitStr", rateLimitStr)
 	if rateLimitStr == "" {
 		config.RateLimit = 100 // Default value
 	} else {

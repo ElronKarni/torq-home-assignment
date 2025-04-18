@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,21 +18,11 @@ func (m *MockService) LookupIP(ip string) (*ip2country.Result, error) {
 	return m.LookupIPFunc(ip)
 }
 
-// MockRateLimiter is a mock implementation of the RateLimiter interface
-type MockRateLimiter struct {
-	AllowFunc func() error
-}
-
-func (m *MockRateLimiter) Allow() error {
-	return m.AllowFunc()
-}
-
 func TestFindCountryHandler(t *testing.T) {
 	tests := []struct {
 		name            string
 		ip              string
 		mockLookupIP    func(ip string) (*ip2country.Result, error)
-		mockAllowFunc   func() error
 		expectedStatus  int
 		expectedMessage string
 	}{
@@ -43,9 +32,6 @@ func TestFindCountryHandler(t *testing.T) {
 			mockLookupIP: func(ip string) (*ip2country.Result, error) {
 				return &ip2country.Result{Country: "US", City: "New York"}, nil
 			},
-			mockAllowFunc: func() error {
-				return nil
-			},
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -53,9 +39,6 @@ func TestFindCountryHandler(t *testing.T) {
 			ip:   "",
 			mockLookupIP: func(ip string) (*ip2country.Result, error) {
 				return nil, nil
-			},
-			mockAllowFunc: func() error {
-				return nil
 			},
 			expectedStatus:  http.StatusBadRequest,
 			expectedMessage: "Missing 'ip' parameter",
@@ -66,9 +49,6 @@ func TestFindCountryHandler(t *testing.T) {
 			mockLookupIP: func(ip string) (*ip2country.Result, error) {
 				return nil, ip2country.ErrInvalidIP
 			},
-			mockAllowFunc: func() error {
-				return nil
-			},
 			expectedStatus:  http.StatusBadRequest,
 			expectedMessage: "Invalid IP address",
 		},
@@ -78,34 +58,16 @@ func TestFindCountryHandler(t *testing.T) {
 			mockLookupIP: func(ip string) (*ip2country.Result, error) {
 				return nil, ip2country.ErrIPNotFound
 			},
-			mockAllowFunc: func() error {
-				return nil
-			},
 			expectedStatus:  http.StatusNotFound,
 			expectedMessage: "IP address not found",
-		},
-		{
-			name: "rate limit exceeded",
-			ip:   "192.168.1.1",
-			mockLookupIP: func(ip string) (*ip2country.Result, error) {
-				return nil, nil
-			},
-			mockAllowFunc: func() error {
-				return errors.New("rate limit exceeded")
-			},
-			expectedStatus:  http.StatusTooManyRequests,
-			expectedMessage: "Too many requests",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock service and rate limiter
+			// Create mock service
 			mockService := &MockService{
 				LookupIPFunc: tt.mockLookupIP,
-			}
-			mockLimiter := &MockRateLimiter{
-				AllowFunc: tt.mockAllowFunc,
 			}
 
 			// Create request
@@ -123,7 +85,7 @@ func TestFindCountryHandler(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			// Create handler
-			handler := FindCountryHandler(mockService, mockLimiter)
+			handler := FindCountryHandler(mockService)
 
 			// Serve request
 			handler.ServeHTTP(rr, req)

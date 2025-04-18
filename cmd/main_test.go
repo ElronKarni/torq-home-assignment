@@ -9,6 +9,7 @@ import (
 
 	"ip2country-api/pkg/handlers"
 	"ip2country-api/pkg/ip2country"
+	"ip2country-api/pkg/middleware"
 	"ip2country-api/pkg/ratelimit"
 )
 
@@ -26,7 +27,7 @@ type MockLimiter struct {
 	shouldAllow bool
 }
 
-// Allow implements the handlers.RateLimiter interface
+// Allow implements the middleware.RateLimiter interface
 func (m *MockLimiter) Allow() error {
 	if !m.shouldAllow {
 		return ratelimit.ErrRateLimitExceeded
@@ -203,9 +204,13 @@ func TestServerIntegration(t *testing.T) {
 	}
 	mockLimiter := &MockLimiter{shouldAllow: true}
 
-	mux.HandleFunc("/v1/find-country", handlers.FindCountryHandler(mockService, mockLimiter))
+	// Set up the handler without rate limiter
+	mux.HandleFunc("/v1/find-country", handlers.FindCountryHandler(mockService))
 
-	ts := httptest.NewServer(mux)
+	// Apply rate limit middleware
+	handler := middleware.RateLimit(mockLimiter)(mux)
+
+	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
 	// Send a test request to verify the endpoint works
