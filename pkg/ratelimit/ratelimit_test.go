@@ -99,7 +99,7 @@ func TestAllowConcurrent(t *testing.T) {
 
 	// Start concurrent goroutines
 	for i := 0; i < 10; i++ {
-		go func(id int) {
+		go func() {
 			for j := 0; j < 10; j++ {
 				err := limiter.Allow()
 				if err == nil {
@@ -107,7 +107,7 @@ func TestAllowConcurrent(t *testing.T) {
 				}
 			}
 			done <- true
-		}(i)
+		}()
 	}
 
 	// Count allowed requests
