@@ -1,0 +1,13 @@
+# Air hot reload temporary files
+tmp/
+air.log
+
+# Go binary
+ip2country-server
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Mac OS specific files
+.DS_Store 
