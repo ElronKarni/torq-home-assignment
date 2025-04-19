@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ip2country-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - IP2COUNTRY_DB_TYPE=csv
+      - RATE_LIMIT=100
+      - PORT=8080
+      - CSV_DATA_PATH=/app/data/ip2country.csv
+    restart: unless-stopped 
