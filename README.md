@@ -16,7 +16,6 @@ A Go service that maps IP addresses to their respective countries and cities.
 
    ```
    git clone https://github.com/ElronKarni/torq-home-assignment.git
-   cd ip2country-api
    ```
 
 2. Install dependencies:
@@ -41,14 +40,7 @@ go run cmd/main.go
 make run
 ```
 
-#### 3. Build and run the binary:
-
-```
-make build
-./ip2country-api
-```
-
-#### 4. Using Docker Compose:
+#### 3. Using Docker Compose:
 
 ```
 make docker-up
