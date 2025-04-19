@@ -27,6 +27,9 @@ func RegisterRoutes(
 
 	// Chain middlewares from innermost to outermost
 
+	// Log every request
+	handler = middleware.Logger(handler)
+
 	// Rate limiting middleware
 	handler = middleware.RateLimit(limiter)(handler)
 

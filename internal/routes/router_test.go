@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,6 +29,11 @@ func (m *MockIp2countryService) LookupIP(ip string) (*ip2country.Result, error) 
 }
 
 func TestRegisterRoutes(t *testing.T) {
+	// Temporarily disable logging to avoid polluting test output
+	oldLogger := log.Writer()
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(oldLogger)
+
 	// Create mock service
 	mockIp2countryService := &MockIp2countryService{
 		LookupIPFunc: func(ip string) (*ip2country.Result, error) {
@@ -84,8 +91,6 @@ func TestRegisterRoutes(t *testing.T) {
 				"Access-Control-Allow-Origin": "http://localhost:3000",
 			},
 		},
-		// We'll skip the preflight test since it's hard to mock with the full middleware chain
-		// The CORS middleware is tested separately in its own test
 	}
 
 	for _, tt := range tests {
@@ -99,12 +104,6 @@ func TestRegisterRoutes(t *testing.T) {
 			// Set origin header for CORS testing
 			if tt.origin != "" {
 				req.Header.Set("Origin", tt.origin)
-			}
-
-			// For OPTIONS requests, add the headers that would be present in a preflight
-			if tt.method == "OPTIONS" {
-				req.Header.Set("Access-Control-Request-Method", "GET")
-				req.Header.Set("Access-Control-Request-Headers", "Content-Type")
 			}
 
 			// Create response recorder
