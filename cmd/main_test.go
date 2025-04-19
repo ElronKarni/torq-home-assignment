@@ -38,8 +38,9 @@ func (m *MockLimiter) Allow() error {
 // TestSetupServer tests the server setup functionality
 func TestSetupServer(t *testing.T) {
 	// Save original environment and restore after test
-	origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+	origDataPath := os.Getenv("CSV_DATA_PATH")
 	origPort := os.Getenv("PORT")
+	origDBType := os.Getenv("IP2COUNTRY_DB_TYPE")
 
 	// Set test environment variables
 	testDataDir, err := os.MkdirTemp("", "ip2country-test")
@@ -56,11 +57,13 @@ func TestSetupServer(t *testing.T) {
 	}
 
 	// Set environment variables for the test
-	os.Setenv("IP2COUNTRY_DATA_PATH", testDataFile)
+	os.Setenv("CSV_DATA_PATH", testDataFile)
+	os.Setenv("IP2COUNTRY_DB_TYPE", "csv")
 	os.Setenv("PORT", "8081") // Use a different port than default
 	defer func() {
-		os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+		os.Setenv("CSV_DATA_PATH", origDataPath)
 		os.Setenv("PORT", origPort)
+		os.Setenv("IP2COUNTRY_DB_TYPE", origDBType)
 	}()
 
 	// Clear DefaultServeMux to avoid conflicts from previous tests
@@ -108,11 +111,19 @@ func TestSetupServerErrors(t *testing.T) {
 	// Test case 2: Invalid data path
 	t.Run("InvalidDataPath", func(t *testing.T) {
 		// Save original environment and restore after test
-		origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+		origDataPath := os.Getenv("CSV_DATA_PATH")
+		origDBType := os.Getenv("IP2COUNTRY_DB_TYPE")
+
+		// Set CSV as the database type
+		os.Setenv("IP2COUNTRY_DB_TYPE", "csv")
 
 		// Set non-existent data path
-		os.Setenv("IP2COUNTRY_DATA_PATH", "/path/that/does/not/exist.csv")
-		defer os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+		os.Setenv("CSV_DATA_PATH", "/path/that/does/not/exist.csv")
+
+		defer func() {
+			os.Setenv("CSV_DATA_PATH", origDataPath)
+			os.Setenv("IP2COUNTRY_DB_TYPE", origDBType)
+		}()
 
 		// Test the setupServer function
 		server, err := setupServer()
@@ -141,8 +152,9 @@ func TestMainFunction(t *testing.T) {
 	}
 
 	// Save original environment and restore after test
-	origDataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
+	origDataPath := os.Getenv("CSV_DATA_PATH")
 	origPort := os.Getenv("PORT")
+	origDBType := os.Getenv("IP2COUNTRY_DB_TYPE")
 
 	// Set test environment variables
 	testDataDir, err := os.MkdirTemp("", "ip2country-test")
@@ -159,11 +171,13 @@ func TestMainFunction(t *testing.T) {
 	}
 
 	// Set environment variables for the test
-	os.Setenv("IP2COUNTRY_DATA_PATH", testDataFile)
+	os.Setenv("CSV_DATA_PATH", testDataFile)
+	os.Setenv("IP2COUNTRY_DB_TYPE", "csv")
 	os.Setenv("PORT", "8082") // Use a different port than default
 	defer func() {
-		os.Setenv("IP2COUNTRY_DATA_PATH", origDataPath)
+		os.Setenv("CSV_DATA_PATH", origDataPath)
 		os.Setenv("PORT", origPort)
+		os.Setenv("IP2COUNTRY_DB_TYPE", origDBType)
 	}()
 
 	// Clear DefaultServeMux to avoid conflicts from previous tests
