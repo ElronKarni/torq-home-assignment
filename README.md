@@ -2,11 +2,101 @@
 
 A Go service that maps IP addresses to their respective countries and cities.
 
+## Installation and Running the Service
+
+### Prerequisites
+
+- Go 1.24 or higher
+- Optional: Docker and Docker Compose for containerized deployment
+- Optional: Air for hot reloading during development
+
+### Setup
+
+1. Clone the repository:
+
+   ```
+   git clone <repository-url>
+   cd ip2country-api
+   ```
+
+2. Install dependencies:
+
+   ```
+   go mod download
+   ```
+
+### Running the Service
+
+There are several ways to run the application:
+
+#### 1. Using Go directly:
+
+```
+go run cmd/main.go
+```
+
+#### 2. Using Make:
+
+```
+make run
+```
+
+#### 3. Build and run the binary:
+
+```
+make build
+./ip2country-api
+```
+
+#### 4. Using Docker Compose:
+
+```
+make docker-up
+```
+
+Or directly:
+
+```
+docker-compose up --build -d
+```
+
+#### 5. Development with Hot Reload:
+
+To start the server with hot reload enabled (requires Air to be installed):
+
+```
+air
+```
+
+## Testing
+
+Run all tests:
+
+```
+make test
+```
+
+Run tests with coverage report:
+
+```
+make test-coverage
+```
+
+Test the rate limiting functionality:
+
+```
+make rate-limit-test
+```
+
 ## Project Structure
 
 - `cmd`: Contains the main application entry point
-- `pkg/config`: Configuration loading from environment variables
-- `pkg/ip2country`: IP to country lookup implementation
+- `internal/config`: Configuration loading from environment variables
+- `internal/ip2country`: IP to country lookup implementation
+- `internal/middleware`: HTTP middleware implementations
+- `internal/handlers`: HTTP request handlers
+- `internal/routes`: API route definitions
+- `internal/utils`: Utility functions
 - `pkg/ratelimit`: Rate limiting implementation
 - `data`: Contains the IP to country mapping data file
 
@@ -14,11 +104,13 @@ A Go service that maps IP addresses to their respective countries and cities.
 
 The service can be configured using the following environment variables:
 
-- `IP2COUNTRY_DATA_PATH`: Path to the IP-to-country data file (default: `data/ip2country.csv`)
 - `IP2COUNTRY_DB_TYPE`: Type of database to use for IP lookups (default: `csv`)
   - Supported values: `csv` (more types will be added in the future)
-- `RATE_LIMIT`: The number of requests per second allowed (default: `100`)
+- `RATE_LIMIT`: The number of requests per second allowed (default: `50`)
 - `PORT`: The port on which the service should listen (default: `8080`)
+- `CSV_DATA_PATH`: Path to the CSV data file when using CSV database type (default: `data/ip2country.csv`)
+- `MONGO_URI`: MongoDB connection URI when using MongoDB database type (default: `mongodb://localhost:27017`)
+- `REDIS_ADDR`: Redis server address when using Redis database type (default: `localhost:6379`)
 
 ## Data File Format
 
@@ -37,7 +129,7 @@ Example:
 
 ## Extensibility
 
-The service is designed to be extensible and support different IP-to-country database formats. Currently, only CSV format is implemented, but it's architected to easily add support for other formats like MaxMind DB (MMDB) or database backends like MySQL.
+The service is designed to be extensible and support different IP-to-country database formats. Currently, only CSV format is implemented, but it's architected to easily add support for other formats like Redis or MongoDB database and more...
 
 To use a different database type, simply set the `IP2COUNTRY_DB_TYPE` environment variable to the desired type. New types can be added by implementing the `ip2country.Service` interface.
 
@@ -101,44 +193,3 @@ The service implements a rate limiter that restricts the number of requests per 
   "error": "Too many requests"
 }
 ```
-
-## Running the Service
-
-```
-go run cmd/main.go
-```
-
-With custom settings:
-
-```
-IP2COUNTRY_DATA_PATH=/path/to/data.csv IP2COUNTRY_DB_TYPE=csv RATE_LIMIT=50 PORT=9090 go run cmd/main.go
-```
-
-## Development with Hot Reload
-
-The project includes hot reload functionality that automatically recompiles and restarts the server when code changes are detected. This makes development faster and more efficient.
-
-### Prerequisites
-
-You'll need to install the Air tool for hot reloading:
-
-```
-go install github.com/air-verse/air@latest
-```
-
-### Running in Development Mode
-
-To start the server with hot reload enabled:
-
-```
-air
-```
-
-This will:
-
-1. Watch for changes in your Go files
-2. Automatically rebuild when changes are detected
-3. Restart the server with the new binary
-4. Show you any build errors in real-time
-
-The hot reload configuration is stored in the `.air.toml` file in the project root. You can modify this file to customize the hot reload behavior if needed.
