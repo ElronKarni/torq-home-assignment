@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -18,9 +19,10 @@ type BackendConfig struct {
 
 // Config holds the application-wide settings.
 type Config struct {
-	Port       int
-	RateLimit  int
-	IP2Country BackendConfig
+	Port           int
+	RateLimit      int
+	IP2Country     BackendConfig
+	AllowedOrigins []string
 }
 
 // Load reads configuration from environment variables
@@ -74,9 +76,16 @@ func Load() (*Config, error) {
 		RedisAddr = redisAddr
 	}
 
+	// Read allowed origins for CORS
+	allowedOrigins := []string{"http://localhost:3000"}
+	if originsStr := os.Getenv("ALLOWED_ORIGINS"); originsStr != "" {
+		allowedOrigins = strings.Split(originsStr, ",")
+	}
+
 	config := &Config{
-		Port:      port,
-		RateLimit: rateLimit,
+		Port:           port,
+		RateLimit:      rateLimit,
+		AllowedOrigins: allowedOrigins,
 		IP2Country: BackendConfig{
 			Type:      dbType,
 			CSVPath:   dataPath,

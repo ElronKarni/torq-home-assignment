@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ func TestLoad(t *testing.T) {
 	origDBType := os.Getenv("IP2COUNTRY_DB_TYPE")
 	origMongoURI := os.Getenv("MONGO_URI")
 	origRedisAddr := os.Getenv("REDIS_ADDR")
+	origAllowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 	defer func() {
 		os.Setenv("CSV_DATA_PATH", origDataPath)
 		os.Setenv("RATE_LIMIT", origRateLimit)
@@ -20,6 +22,7 @@ func TestLoad(t *testing.T) {
 		os.Setenv("IP2COUNTRY_DB_TYPE", origDBType)
 		os.Setenv("MONGO_URI", origMongoURI)
 		os.Setenv("REDIS_ADDR", origRedisAddr)
+		os.Setenv("ALLOWED_ORIGINS", origAllowedOrigins)
 	}()
 
 	testCases := []struct {
@@ -38,8 +41,9 @@ func TestLoad(t *testing.T) {
 					MongoURI:  "mongodb://localhost:27017",
 					RedisAddr: "localhost:6379",
 				},
-				RateLimit: 100,
-				Port:      8080,
+				RateLimit:      100,
+				Port:           8080,
+				AllowedOrigins: []string{"http://localhost:3000"},
 			},
 			expectError: false,
 		},
@@ -50,6 +54,7 @@ func TestLoad(t *testing.T) {
 				"RATE_LIMIT":         "200",
 				"PORT":               "9090",
 				"IP2COUNTRY_DB_TYPE": "mmdb",
+				"ALLOWED_ORIGINS":    "https://myapp.com,https://admin.myapp.com",
 			},
 			expectedConfig: &Config{
 				IP2Country: BackendConfig{
@@ -58,8 +63,9 @@ func TestLoad(t *testing.T) {
 					MongoURI:  "mongodb://localhost:27017",
 					RedisAddr: "localhost:6379",
 				},
-				RateLimit: 200,
-				Port:      9090,
+				RateLimit:      200,
+				Port:           9090,
+				AllowedOrigins: []string{"https://myapp.com", "https://admin.myapp.com"},
 			},
 			expectError: false,
 		},
@@ -76,8 +82,9 @@ func TestLoad(t *testing.T) {
 					MongoURI:  "mongodb://custom-server:27018",
 					RedisAddr: "localhost:6379",
 				},
-				RateLimit: 100,
-				Port:      8080,
+				RateLimit:      100,
+				Port:           8080,
+				AllowedOrigins: []string{"http://localhost:3000"},
 			},
 			expectError: false,
 		},
@@ -94,8 +101,27 @@ func TestLoad(t *testing.T) {
 					MongoURI:  "mongodb://localhost:27017",
 					RedisAddr: "custom-redis:6380",
 				},
-				RateLimit: 100,
-				Port:      8080,
+				RateLimit:      100,
+				Port:           8080,
+				AllowedOrigins: []string{"http://localhost:3000"},
+			},
+			expectError: false,
+		},
+		{
+			name: "CORS configuration",
+			envVars: map[string]string{
+				"ALLOWED_ORIGINS": "https://app1.com,https://app2.com,https://app3.com",
+			},
+			expectedConfig: &Config{
+				IP2Country: BackendConfig{
+					Type:      "csv",
+					CSVPath:   "data/ip2country.csv",
+					MongoURI:  "mongodb://localhost:27017",
+					RedisAddr: "localhost:6379",
+				},
+				RateLimit:      100,
+				Port:           8080,
+				AllowedOrigins: []string{"https://app1.com", "https://app2.com", "https://app3.com"},
 			},
 			expectError: false,
 		},
@@ -126,6 +152,7 @@ func TestLoad(t *testing.T) {
 			os.Unsetenv("IP2COUNTRY_DB_TYPE")
 			os.Unsetenv("MONGO_URI")
 			os.Unsetenv("REDIS_ADDR")
+			os.Unsetenv("ALLOWED_ORIGINS")
 
 			// Set environment variables for this test case
 			for k, v := range tc.envVars {
@@ -166,6 +193,9 @@ func TestLoad(t *testing.T) {
 			}
 			if config.Port != tc.expectedConfig.Port {
 				t.Errorf("Port: expected %d, got %d", tc.expectedConfig.Port, config.Port)
+			}
+			if !reflect.DeepEqual(config.AllowedOrigins, tc.expectedConfig.AllowedOrigins) {
+				t.Errorf("AllowedOrigins: expected %v, got %v", tc.expectedConfig.AllowedOrigins, config.AllowedOrigins)
 			}
 		})
 	}

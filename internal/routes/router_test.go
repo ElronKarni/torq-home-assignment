@@ -49,7 +49,7 @@ func TestRegisterRoutes(t *testing.T) {
 	}
 
 	// Register routes
-	handler := RegisterRoutes(mockIp2countryService, mockRateLimiter)
+	handler := RegisterRoutes(mockIp2countryService, mockRateLimiter, []string{"http://localhost:3000"})
 
 	// Test cases
 	tests := []struct {

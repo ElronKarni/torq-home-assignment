@@ -103,6 +103,7 @@ The service can be configured using the following environment variables:
 - `CSV_DATA_PATH`: Path to the CSV data file when using CSV database type (default: `data/ip2country.csv`)
 - `MONGO_URI`: MongoDB connection URI when using MongoDB database type (default: `mongodb://localhost:27017`)
 - `REDIS_ADDR`: Redis server address when using Redis database type (default: `localhost:6379`)
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed origins for CORS (default: `http://localhost:3000`)
 
 ## Data File Format
 

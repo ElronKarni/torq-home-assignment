@@ -16,11 +16,6 @@ import (
 	"ip2country-api/pkg/ratelimit"
 )
 
-// For testing purposes - allows tests to override server start behavior
-var serverListenAndServe = func(server *http.Server) error {
-	return server.ListenAndServe()
-}
-
 // setupServer initializes all components and returns the HTTP server
 // This function is extracted to make it testable
 func setupServer() (*http.Server, error) {
@@ -40,7 +35,7 @@ func setupServer() (*http.Server, error) {
 	limiter := ratelimit.NewLimiter(cfg.RateLimit)
 
 	// Set up HTTP routes with middleware
-	handler := routes.RegisterRoutes(ip2countryService, limiter)
+	handler := routes.RegisterRoutes(ip2countryService, limiter, cfg.AllowedOrigins)
 
 	// Create HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)
@@ -54,6 +49,7 @@ func setupServer() (*http.Server, error) {
 
 	log.Printf("Rate limit: %d requests per second", cfg.RateLimit)
 	log.Printf("IP2Country backend: %#v", cfg.IP2Country)
+	log.Printf("CORS allowed origins: %v", cfg.AllowedOrigins)
 
 	return server, nil
 }

@@ -12,6 +12,7 @@ import (
 func RegisterRoutes(
 	ip2countryService ip2country.Service,
 	limiter middleware.RateLimiter,
+	allowedOrigins []string,
 ) http.Handler {
 	// Create a new ServeMux
 	mux := http.NewServeMux()
@@ -34,7 +35,6 @@ func RegisterRoutes(
 	handler = middleware.RateLimit(limiter)(handler)
 
 	// CORS middleware (allow specific origins)
-	allowedOrigins := []string{"http://localhost:3000", "https://example.com"}
 	handler = middleware.CORS(allowedOrigins)(handler)
 
 	// Security headers middleware (applied last)
