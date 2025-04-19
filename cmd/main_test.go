@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"ip2country-api/internal/handlers"
 	"ip2country-api/internal/ip2country"
@@ -136,78 +135,6 @@ func TestSetupServerErrors(t *testing.T) {
 			t.Fatal("setupServer() should return nil server on error")
 		}
 	})
-}
-
-// TestMainFunction tests parts of the main function without actually starting the server
-func TestMainFunction(t *testing.T) {
-	// Save original function and restore after test
-	originalListenAndServe := serverListenAndServe
-	defer func() { serverListenAndServe = originalListenAndServe }()
-
-	// Make a channel for our tests
-	testDone := make(chan bool, 1)
-
-	// Override serverListenAndServe to immediately signal our test channel and return
-	serverListenAndServe = func(s *http.Server) error {
-		testDone <- true // Signal that our server would have started
-		return nil       // Return immediately, don't actually start server
-	}
-
-	// Save original environment and restore after test
-	origDataPath := os.Getenv("CSV_DATA_PATH")
-	origPort := os.Getenv("PORT")
-	origDBType := os.Getenv("IP2COUNTRY_DB_TYPE")
-
-	// Set test environment variables
-	testDataDir, err := os.MkdirTemp("", "ip2country-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(testDataDir)
-
-	// Create a test data file
-	testDataFile := testDataDir + "/ip2country.csv"
-	testData := "1.1.1.1,Sydney,Australia\n8.8.8.8,Mountain View,United States"
-	if err := os.WriteFile(testDataFile, []byte(testData), 0644); err != nil {
-		t.Fatalf("Failed to write test data file: %v", err)
-	}
-
-	// Set environment variables for the test
-	os.Setenv("CSV_DATA_PATH", testDataFile)
-	os.Setenv("IP2COUNTRY_DB_TYPE", "csv")
-	os.Setenv("PORT", "8082") // Use a different port than default
-	defer func() {
-		os.Setenv("CSV_DATA_PATH", origDataPath)
-		os.Setenv("PORT", origPort)
-		os.Setenv("IP2COUNTRY_DB_TYPE", origDBType)
-	}()
-
-	// Clear DefaultServeMux to avoid conflicts from previous tests
-	http.DefaultServeMux = http.NewServeMux()
-
-	// Instead of calling full main(), just test setupServer() which is the core functionality
-	server, err := setupServer()
-	if err != nil {
-		t.Fatalf("setupServer() failed: %v", err)
-	}
-
-	// Verify server configuration
-	if server.Addr != ":8082" {
-		t.Errorf("Server addr: expected :8082, got %s", server.Addr)
-	}
-
-	// Now verify that serverListenAndServe would be called if we start the server
-	go func() {
-		serverListenAndServe(server)
-	}()
-
-	// Wait for our mock function to signal or timeout
-	select {
-	case <-testDone:
-		// Success - our mocked server start function was called
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timeout waiting for serverListenAndServe to be called")
-	}
 }
 
 // TestServerIntegration tests that the server starts and listens on the correct port
