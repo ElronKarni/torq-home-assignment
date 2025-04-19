@@ -25,8 +25,8 @@ func setupServer() (*http.Server, error) {
 		return nil, fmt.Errorf("failed to load configuration: %v", err)
 	}
 
-	// Initialize IP2Country service using the factory function
-	ip2countryService, err := ip2country.NewService(cfg.DataPath, cfg.IP2CountryDBType)
+	// init IP2country service with just the BackendConfig
+	ip2countryService, err := ip2country.NewService(cfg.IP2Country)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize IP2Country service: %v", err)
 	}
@@ -44,10 +44,8 @@ func setupServer() (*http.Server, error) {
 		Handler: handler, // Use our custom handler with middleware
 	}
 
-	log.Printf("Server configured on %s", addr)
 	log.Printf("Rate limit: %d requests per second", cfg.RateLimit)
-	log.Printf("IP2Country data path: %s", cfg.DataPath)
-	log.Printf("IP2Country database type: %s", cfg.IP2CountryDBType)
+	log.Printf("IP2Country backend: %#v", cfg.IP2Country)
 
 	return server, nil
 }
@@ -58,7 +56,7 @@ func main() {
 		log.Fatalf("Server setup failed: %v", err)
 	}
 
-	log.Printf("Starting server on %s", server.Addr)
+	log.Printf("Server listening on %s", server.Addr)
 	if err := serverListenAndServe(server); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

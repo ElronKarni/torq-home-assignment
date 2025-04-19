@@ -9,12 +9,18 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds the application configuration
+type BackendConfig struct {
+	Type      string // "csv", "mongo", "redis", etc.
+	CSVPath   string
+	MongoURI  string
+	RedisAddr string
+}
+
+// Config holds the application-wide settings.
 type Config struct {
-	DataPath         string
-	RateLimit        int
-	Port             int
-	IP2CountryDBType string
+	Port       int
+	RateLimit  int
+	IP2Country BackendConfig
 }
 
 // Load reads configuration from environment variables
@@ -24,44 +30,59 @@ func Load() (*Config, error) {
 		log.Println("Warning: No .env file found or error loading it:", err)
 	}
 
-	config := &Config{}
-
-	// Read IP2COUNTRY_DATA_PATH
-	dataPath := os.Getenv("IP2COUNTRY_DATA_PATH")
-	if dataPath == "" {
-		dataPath = "data/ip2country.csv" // Default value
-	}
-	config.DataPath = dataPath
-
-	// Read IP2COUNTRY_DB_TYPE
-	dbType := os.Getenv("IP2COUNTRY_DB_TYPE")
-	if dbType == "" {
-		dbType = "csv" // Default value
-	}
-	config.IP2CountryDBType = dbType
-
 	// Read RATE_LIMIT
-	rateLimitStr := os.Getenv("RATE_LIMIT")
-	if rateLimitStr == "" {
-		config.RateLimit = 100 // Default value
-	} else {
-		rateLimit, err := strconv.Atoi(rateLimitStr)
+	rateLimit := 100
+	if rateLimitStr := os.Getenv("RATE_LIMIT"); rateLimitStr != "" {
+		rateLimitInt, err := strconv.Atoi(rateLimitStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid RATE_LIMIT value: %v", err)
 		}
-		config.RateLimit = rateLimit
+		rateLimit = rateLimitInt
 	}
 
 	// Read PORT
-	portStr := os.Getenv("PORT")
-	if portStr == "" {
-		config.Port = 8080 // Default value
-	} else {
-		port, err := strconv.Atoi(portStr)
+	port := 8080
+	if portStr := os.Getenv("PORT"); portStr != "" {
+		portInt, err := strconv.Atoi(portStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid PORT value: %v", err)
 		}
-		config.Port = port
+		port = portInt
+	}
+
+	// Read IP2Country DB Type
+	dbType := "csv"
+	if dbTypeStr := os.Getenv("IP2COUNTRY_DB_TYPE"); dbTypeStr != "" {
+		dbType = dbTypeStr
+	}
+
+	// Read CSV Path
+	dataPath := "data/ip2country.csv"
+	if dataPathStr := os.Getenv("CSV_DATA_PATH"); dataPathStr != "" {
+		dataPath = dataPathStr
+	}
+
+	// Read Mongo URI
+	MongoURI := "mongodb://localhost:27017"
+	if mongoURI := os.Getenv("MONGO_URI"); mongoURI != "" {
+		MongoURI = mongoURI
+	}
+
+	// Read Redis Address
+	RedisAddr := "localhost:6379"
+	if redisAddr := os.Getenv("REDIS_ADDR"); redisAddr != "" {
+		RedisAddr = redisAddr
+	}
+
+	config := &Config{
+		Port:      port,
+		RateLimit: rateLimit,
+		IP2Country: BackendConfig{
+			Type:      dbType,
+			CSVPath:   dataPath,
+			MongoURI:  MongoURI,
+			RedisAddr: RedisAddr,
+		},
 	}
 
 	return config, nil
