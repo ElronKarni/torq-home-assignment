@@ -18,31 +18,31 @@ func (m *MockRateLimiter) Allow() error {
 }
 
 // MockService is a mock implementation of the ip2country.Service interface
-type MockService struct {
+type MockIp2countryService struct {
 	LookupIPFunc func(ip string) (*ip2country.Result, error)
 }
 
-func (m *MockService) LookupIP(ip string) (*ip2country.Result, error) {
+func (m *MockIp2countryService) LookupIP(ip string) (*ip2country.Result, error) {
 	return m.LookupIPFunc(ip)
 }
 
 func TestRegisterRoutes(t *testing.T) {
 	// Create mock service
-	mockService := &MockService{
+	mockIp2countryService := &MockIp2countryService{
 		LookupIPFunc: func(ip string) (*ip2country.Result, error) {
 			return &ip2country.Result{Country: "US", City: "New York"}, nil
 		},
 	}
 
 	// Create mock rate limiter that always allows requests
-	mockLimiter := &MockRateLimiter{
+	mockRateLimiter := &MockRateLimiter{
 		AllowFunc: func() error {
 			return nil
 		},
 	}
 
 	// Register routes
-	handler := RegisterRoutes(mockService, mockLimiter)
+	handler := RegisterRoutes(mockIp2countryService, mockRateLimiter)
 
 	// Test cases
 	tests := []struct {

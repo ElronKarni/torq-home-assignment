@@ -31,12 +31,18 @@ func NewService(filePath string, dbType string) (Service, error) {
 	switch dbType {
 	case "csv":
 		return NewCSVService(filePath)
-	case "mmdb":
+	case "mongodb":
 		// This would be implemented in the future
-		return nil, fmt.Errorf("mmdb database type not implemented yet")
+		return nil, fmt.Errorf("mongodb database type not implemented yet")
 	case "mysql":
 		// This would be implemented in the future
 		return nil, fmt.Errorf("mysql database type not implemented yet")
+	case "postgres":
+		// This would be implemented in the future
+		return nil, fmt.Errorf("postgres database type not implemented yet")
+	case "redis":
+		// This would be implemented in the future
+		return nil, fmt.Errorf("redis database type not implemented yet")
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", dbType)
 	}

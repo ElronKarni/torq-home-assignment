@@ -11,3 +11,6 @@ ip2country-server
 
 # Mac OS specific files
 .DS_Store 
+
+# TODO.txt
+TODO.txt

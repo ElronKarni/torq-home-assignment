@@ -10,14 +10,14 @@ import (
 
 // RegisterRoutes sets up all API routes
 func RegisterRoutes(
-	ipService ip2country.Service,
+	ip2countryService ip2country.Service,
 	limiter middleware.RateLimiter,
 ) http.Handler {
 	// Create a new ServeMux
 	mux := http.NewServeMux()
 
 	// IP-to-country API endpoints
-	mux.HandleFunc("/v1/find-country", handlers.FindCountryHandler(ipService))
+	mux.HandleFunc("/v1/find-country", handlers.FindCountryHandler(ip2countryService))
 
 	// Additional routes can be added here as the API grows
 

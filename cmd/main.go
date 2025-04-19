@@ -26,7 +26,7 @@ func setupServer() (*http.Server, error) {
 	}
 
 	// Initialize IP2Country service using the factory function
-	ipService, err := ip2country.NewService(cfg.DataPath, cfg.IP2CountryDBType)
+	ip2countryService, err := ip2country.NewService(cfg.DataPath, cfg.IP2CountryDBType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize IP2Country service: %v", err)
 	}
@@ -35,7 +35,7 @@ func setupServer() (*http.Server, error) {
 	limiter := ratelimit.NewLimiter(cfg.RateLimit)
 
 	// Set up HTTP routes with middleware
-	handler := routes.RegisterRoutes(ipService, limiter)
+	handler := routes.RegisterRoutes(ip2countryService, limiter)
 
 	// Create HTTP server
 	addr := fmt.Sprintf(":%d", cfg.Port)

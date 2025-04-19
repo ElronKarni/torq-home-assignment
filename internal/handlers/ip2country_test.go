@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,6 +20,8 @@ func (m *MockService) LookupIP(ip string) (*ip2country.Result, error) {
 }
 
 func TestFindCountryHandler(t *testing.T) {
+	successfulLookup := &ip2country.Result{Country: "US", City: "New York"}
+
 	tests := []struct {
 		name            string
 		ip              string
@@ -30,7 +33,7 @@ func TestFindCountryHandler(t *testing.T) {
 			name: "successful lookup",
 			ip:   "192.168.1.1",
 			mockLookupIP: func(ip string) (*ip2country.Result, error) {
-				return &ip2country.Result{Country: "US", City: "New York"}, nil
+				return successfulLookup, nil
 			},
 			expectedStatus: http.StatusOK,
 		},
@@ -60,6 +63,15 @@ func TestFindCountryHandler(t *testing.T) {
 			},
 			expectedStatus:  http.StatusNotFound,
 			expectedMessage: "IP address not found",
+		},
+		{
+			name: "server error",
+			ip:   "192.168.1.1",
+			mockLookupIP: func(ip string) (*ip2country.Result, error) {
+				return nil, fmt.Errorf("test error")
+			},
+			expectedStatus:  http.StatusInternalServerError,
+			expectedMessage: "Failed to look up IP information",
 		},
 	}
 
@@ -93,6 +105,17 @@ func TestFindCountryHandler(t *testing.T) {
 			// Check status code
 			if status := rr.Code; status != tt.expectedStatus {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, tt.expectedStatus)
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				var result ip2country.Result
+				err := json.Unmarshal(rr.Body.Bytes(), &result)
+				if err != nil {
+					t.Errorf("could not parse success response: %v", err)
+				}
+				if result.Country != successfulLookup.Country || result.City != successfulLookup.City {
+					t.Errorf("unexpected result: got %+v", result)
+				}
 			}
 
 			// Check response message if expected
