@@ -1,9 +1,16 @@
-.PHONY: build run test test-coverage clean dev rate-limit-test test-package
+.PHONY: build run test test-coverage clean rate-limit-test test-package docker-up docker-down
 
 # Go parameters
 BINARY_NAME=ip2country-api
 MAIN_PATH=./cmd/main.go
 COVER_PROFILE=coverage.out
+
+
+docker-up:
+	docker-compose up --build -d
+
+docker-down:
+	docker-compose down
 
 # Build the application
 build:
