@@ -25,8 +25,17 @@ func RegisterRoutes(
 	// Start with the innermost middleware
 	var handler http.Handler = mux
 
-	// Apply rate limiting middleware
+	// Chain middlewares from innermost to outermost
+
+	// Rate limiting middleware
 	handler = middleware.RateLimit(limiter)(handler)
+
+	// CORS middleware (allow specific origins)
+	allowedOrigins := []string{"http://localhost:3000", "https://example.com"}
+	handler = middleware.CORS(allowedOrigins)(handler)
+
+	// Security headers middleware (applied last)
+	handler = middleware.SecurityHeaders(handler)
 
 	return handler
 }

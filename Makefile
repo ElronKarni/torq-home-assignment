@@ -36,10 +36,7 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(COVER_PROFILE)
 
-# Run application with hot reload using Air
-dev:
-	air
 
-# Run rate limit test script
+# Real run rate limit test script
 rate-limit-test:
 	bash test-rate-limit.sh 
