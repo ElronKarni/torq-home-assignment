@@ -2,6 +2,8 @@
 
 A Go service that maps IP addresses to their respective countries and cities.
 
+![System Data Flow Diagram](/data-flow-diagram.png)
+
 ## Installation and Running the Service
 
 ### Prerequisites
