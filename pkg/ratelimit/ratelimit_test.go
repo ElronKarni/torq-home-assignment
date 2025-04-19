@@ -136,6 +136,4 @@ outer:
 		t.Errorf("Rate limiter allowed %d requests, expected max %d", count, limit)
 	}
 
-	// Note: we might have fewer than 'limit' allowed requests if goroutines
-	// weren't all able to run before others used up the limit
 }
