@@ -15,7 +15,7 @@ A Go service that maps IP addresses to their respective countries and cities.
 1. Clone the repository:
 
    ```
-   git clone <repository-url>
+   git clone https://github.com/ElronKarni/torq-home-assignment.git
    cd ip2country-api
    ```
 
